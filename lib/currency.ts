@@ -7,10 +7,11 @@ export const CURRENCIES = [
 ]
 
 export function formatCurrency(amount: number, currencyCode: string = 'EUR'): string {
+    const safe = isFinite(amount) ? amount : 0
     return new Intl.NumberFormat('es-ES', {
         style: 'currency',
         currency: currencyCode,
-    }).format(amount)
+    }).format(safe)
 }
 
 export async function fetchExchangeRate(from: string, to: string): Promise<number> {

@@ -124,9 +124,17 @@ interface InvoicePDFProps {
     settings: Settings | null
 }
 
+function safeCurrency(amount: number, currency: string = 'EUR'): string {
+    if (!isFinite(amount)) return formatCurrency(0, currency)
+    return formatCurrency(amount, currency)
+}
+
 export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
-    const ivaRate = invoice.totals.iva / invoice.totals.subtotal * 100 || settings?.default_iva || 21
-    const irpfRate = invoice.totals.irpf / invoice.totals.subtotal * 100 || settings?.default_irpf || 15
+    const subtotal = invoice.totals.subtotal || 0
+    const rawIvaRate = subtotal > 0 ? (invoice.totals.iva / subtotal) * 100 : null
+    const ivaRate = (rawIvaRate != null && isFinite(rawIvaRate)) ? rawIvaRate : (settings?.default_iva ?? 21)
+    const rawIrpfRate = subtotal > 0 ? (invoice.totals.irpf / subtotal) * 100 : null
+    const irpfRate = (rawIrpfRate != null && isFinite(rawIrpfRate)) ? rawIrpfRate : (settings?.default_irpf ?? 15)
 
     return (
         <Document>
@@ -185,8 +193,8 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                         <View key={i} style={styles.tableRow}>
                             <Text style={styles.descriptionCol}>{item.description}</Text>
                             <Text style={styles.qtyCol}>{item.quantity}</Text>
-                            <Text style={styles.priceCol}>{formatCurrency(item.unit_price)}</Text>
-                            <Text style={styles.totalCol}>{formatCurrency(item.quantity * item.unit_price)}</Text>
+                            <Text style={styles.priceCol}>{safeCurrency(item.unit_price)}</Text>
+                            <Text style={styles.totalCol}>{safeCurrency(item.quantity * item.unit_price)}</Text>
                         </View>
                     ))}
                 </View>
@@ -206,8 +214,8 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                                 <View key={i} style={styles.tableRow}>
                                     <Text style={styles.descriptionCol}>{item.description}</Text>
                                     <Text style={styles.qtyCol}>{item.quantity}</Text>
-                                    <Text style={styles.priceCol}>{formatCurrency(item.unit_price)}</Text>
-                                    <Text style={styles.totalCol}>{formatCurrency(item.quantity * item.unit_price)}</Text>
+                                    <Text style={styles.priceCol}>{safeCurrency(item.unit_price)}</Text>
+                                    <Text style={styles.totalCol}>{safeCurrency(item.quantity * item.unit_price)}</Text>
                                 </View>
                             ))}
                         </View>
@@ -218,29 +226,29 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                 <View style={styles.totals}>
                     <View style={styles.totalRow}>
                         <Text>Subtotal</Text>
-                        <Text>{formatCurrency(invoice.totals.subtotal)}</Text>
+                        <Text>{safeCurrency(invoice.totals.subtotal)}</Text>
                     </View>
                     {invoice.show_iva && (
                         <View style={styles.totalRow}>
-                            <Text>IVA ({ivaRate.toFixed(0)}%)</Text>
-                            <Text>{formatCurrency(invoice.totals.iva)}</Text>
+                            <Text>IVA ({Math.round(ivaRate)}%)</Text>
+                            <Text>{safeCurrency(invoice.totals.iva)}</Text>
                         </View>
                     )}
                     {invoice.totals.irpf > 0 && (
                         <View style={styles.totalRow}>
-                            <Text>IRPF ({irpfRate.toFixed(0)}%)</Text>
-                            <Text>-{formatCurrency(invoice.totals.irpf)}</Text>
+                            <Text>IRPF ({Math.round(irpfRate)}%)</Text>
+                            <Text>-{safeCurrency(invoice.totals.irpf)}</Text>
                         </View>
                     )}
                     {invoice.totals.expenses > 0 && (
                         <View style={styles.totalRow}>
                             <Text>Expenses</Text>
-                            <Text>{formatCurrency(invoice.totals.expenses)}</Text>
+                            <Text>{safeCurrency(invoice.totals.expenses)}</Text>
                         </View>
                     )}
                     <View style={styles.grandTotal}>
                         <Text>TOTAL (EUR)</Text>
-                        <Text>{formatCurrency(invoice.totals.total)}</Text>
+                        <Text>{safeCurrency(invoice.totals.total)}</Text>
                     </View>
                 </View>
 
@@ -249,7 +257,7 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                     <View style={styles.secondaryCurrencyBox}>
                         <View style={styles.totalRow}>
                             <Text>Total in {invoice.secondary_currency}</Text>
-                            <Text>{formatCurrency(invoice.totals.total * (invoice.exchange_rate_used || 1), invoice.secondary_currency)}</Text>
+                            <Text>{safeCurrency(invoice.totals.total * (invoice.exchange_rate_used || 1), invoice.secondary_currency)}</Text>
                         </View>
                         <Text style={{ fontSize: 8, color: '#666666', marginTop: 5 }}>
                             Exchange Rate: 1 EUR = {invoice.exchange_rate_used} {invoice.secondary_currency}

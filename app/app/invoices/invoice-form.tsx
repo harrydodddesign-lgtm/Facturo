@@ -64,8 +64,20 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
     const [dueDate, setDueDate] = React.useState(defaultDueDate)
     const [invoiceNumber, setInvoiceNumber] = React.useState(invoice?.invoice_number || '')
     const [lineItems, setLineItems] = React.useState<InvoiceLineItem[]>(invoice?.line_items || [])
-    const [ivaRate, setIvaRate] = React.useState(invoice?.totals?.iva ? (invoice.totals.iva / invoice.totals.subtotal * 100) : (settings?.default_iva || 21))
-    const [irpfRate, setIrpfRate] = React.useState(invoice?.totals?.irpf ? (invoice.totals.irpf / invoice.totals.subtotal * 100) : (settings?.default_irpf || 15))
+    const [ivaRate, setIvaRate] = React.useState(() => {
+        if (invoice?.totals?.iva && invoice?.totals?.subtotal) {
+            const r = (invoice.totals.iva / invoice.totals.subtotal) * 100
+            return isFinite(r) ? r : (settings?.default_iva ?? 21)
+        }
+        return settings?.default_iva ?? 21
+    })
+    const [irpfRate, setIrpfRate] = React.useState(() => {
+        if (invoice?.totals?.irpf && invoice?.totals?.subtotal) {
+            const r = (invoice.totals.irpf / invoice.totals.subtotal) * 100
+            return isFinite(r) ? r : (settings?.default_irpf ?? 15)
+        }
+        return settings?.default_irpf ?? 15
+    })
     const [showIrpf, setShowIrpf] = React.useState(!!invoice?.totals?.irpf || false)
     const [secondaryCurrency, setSecondaryCurrency] = React.useState(invoice?.secondary_currency || '')
     const [showSecondaryCurrency, setShowSecondaryCurrency] = React.useState(invoice?.show_secondary_currency || false)
@@ -186,7 +198,7 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-6 overflow-hidden">
             {/* Left Column: Form (Scrollable) */}
-            <div className="w-full lg:w-1/2 flex flex-col h-full overflow-y-auto pr-2 pb-20">
+            <div className="w-full lg:w-1/2 flex flex-col h-full overflow-y-auto pr-2 pb-8">
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <Link href="/app/invoices">
@@ -209,13 +221,17 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                                 invoice={currentInvoice}
                                 client={client}
                                 settings={settings}
-                                variant="default"
+                                variant="outline"
+                                size="sm"
                             />
                         )}
+                        <Button type="submit" form="invoice-form" size="sm">
+                            {isEditing ? 'Save' : 'Create'}
+                        </Button>
                     </div>
                 </div>
 
-                <form action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
+                <form id="invoice-form" action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
                     <Card>
                         <CardContent className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
@@ -400,8 +416,14 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                                     <Input
                                         id="iva"
                                         type="number"
+                                        min="0"
+                                        max="100"
+                                        step="1"
                                         value={ivaRate}
-                                        onChange={(e) => setIvaRate(parseFloat(e.target.value))}
+                                        onChange={(e) => {
+                                            const v = parseFloat(e.target.value)
+                                            setIvaRate(isFinite(v) ? v : 0)
+                                        }}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -417,8 +439,14 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                                     <Input
                                         id="irpf"
                                         type="number"
+                                        min="0"
+                                        max="100"
+                                        step="1"
                                         value={irpfRate}
-                                        onChange={(e) => setIrpfRate(parseFloat(e.target.value))}
+                                        onChange={(e) => {
+                                            const v = parseFloat(e.target.value)
+                                            setIrpfRate(isFinite(v) ? v : 0)
+                                        }}
                                         disabled={!showIrpf}
                                     />
                                 </div>
@@ -540,11 +568,6 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                         </CardContent>
                     </Card>
 
-                    <div className="sticky bottom-0 bg-white p-4 border-t border-neutral-200">
-                        <Button type="submit" className="w-full">
-                            {isEditing ? 'Save Invoice' : 'Create Invoice'}
-                        </Button>
-                    </div>
                 </form>
             </div>
 
