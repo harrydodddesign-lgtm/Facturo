@@ -8,8 +8,6 @@ import { Invoice, Client, Settings } from '@/types'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function sendInvoiceEmail({
     invoice,
     client,
@@ -25,6 +23,8 @@ export async function sendInvoiceEmail({
     subject: string
     message?: string
 }) {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
     // Generate PDF buffer
     const pdfBuffer = await renderToBuffer(
         React.createElement(InvoicePDF, { invoice, client, settings }) as any
