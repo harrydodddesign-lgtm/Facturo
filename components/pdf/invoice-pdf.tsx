@@ -155,24 +155,24 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
 
                 {/* Client & User Details */}
                 <View style={[styles.row, { marginBottom: 30 }]}>
-                    <View style={styles.col}>
+                    <View style={[styles.col, { width: '48%' }]}>
                         <Text style={styles.label}>BILLED TO</Text>
                         <Text style={[styles.value, { fontWeight: 'bold' }]}>{client.name}</Text>
                         {client.address ? <Text style={styles.value}>{client.address}</Text> : null}
-                        {client.nif ? <Text style={styles.value}>NIF: {client.nif}</Text> : null}
+                        {client.nif ? <Text style={styles.value}>VAT: {client.nif}</Text> : null}
                         {client.email ? <Text style={styles.value}>{client.email}</Text> : null}
                         {!client.nif && client.contact ? <Text style={styles.value}>{client.contact}</Text> : null}
                     </View>
-                    <View style={[styles.col, { alignItems: 'flex-end' }]}>
+                    <View style={[styles.col, { width: '48%', alignItems: 'flex-end' }]}>
                         <Text style={styles.label}>FROM</Text>
                         {settings?.company_name ? (
                             <Text style={[styles.value, { fontWeight: 'bold' }]}>{settings.company_name}</Text>
                         ) : null}
                         {settings?.company_address ? (
-                            <Text style={styles.value}>{settings.company_address}</Text>
+                            <Text style={[styles.value, { textAlign: 'right' }]}>{settings.company_address}</Text>
                         ) : null}
                         {settings?.tax_id ? (
-                            <Text style={styles.value}>NIF: {settings.tax_id}</Text>
+                            <Text style={styles.value}>Tax ID: {settings.tax_id}</Text>
                         ) : null}
                         {settings?.company_email ? (
                             <Text style={styles.value}>{settings.company_email}</Text>

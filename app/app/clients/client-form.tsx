@@ -50,11 +50,11 @@ export function ClientForm({ client }: { client?: Client }) {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nif">NIF / CIF</Label>
+                            <Label htmlFor="nif">VAT / Tax Number</Label>
                             <Input
                                 id="nif"
                                 name="nif"
-                                placeholder="B12345678"
+                                placeholder="e.g. BE0735795577 or ESB12345678"
                                 defaultValue={client?.nif || ''}
                             />
                         </div>

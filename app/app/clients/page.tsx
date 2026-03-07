@@ -30,7 +30,7 @@ export default async function ClientsPage() {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Code</TableHead>
-                            <TableHead>NIF</TableHead>
+                            <TableHead>VAT No.</TableHead>
                             <TableHead>Currency</TableHead>
                             <TableHead>Contact</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
