@@ -9,6 +9,7 @@ interface FormSubmitButtonProps {
     variant?: 'default' | 'ghost' | 'outline'
     size?: 'default' | 'sm' | 'lg' | 'icon'
     pendingText?: string
+    title?: string
 }
 
 export function FormSubmitButton({
@@ -17,6 +18,7 @@ export function FormSubmitButton({
     variant = 'ghost',
     size = 'sm',
     pendingText,
+    title,
 }: FormSubmitButtonProps) {
     const { pending } = useFormStatus()
     return (
@@ -27,6 +29,7 @@ export function FormSubmitButton({
             className={className}
             disabled={pending}
             aria-disabled={pending}
+            title={title}
         >
             {pending ? (pendingText ?? '…') : children}
         </Button>
