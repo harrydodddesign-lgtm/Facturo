@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import { signup, AuthState } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +15,7 @@ const initialState: AuthState = {
 }
 
 export default function SignupPage() {
-    const [state, formAction] = useFormState(signup, initialState)
+    const [state, formAction] = useActionState(signup, initialState)
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">

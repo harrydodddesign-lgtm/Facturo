@@ -80,6 +80,8 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
 
     const client = clients.find(c => c.id === clientId)
     const [isDirty, setIsDirty] = React.useState(false)
+    // Track whether user has manually edited the invoice number
+    const invoiceNumberEdited = React.useRef(false)
 
     // Warn on unsaved changes
     React.useEffect(() => {
@@ -89,9 +91,9 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
         return () => window.removeEventListener('beforeunload', handler)
     }, [isDirty])
 
-    // Effects
+    // Auto-generate invoice number when client or date changes (new invoices only, unless user has edited it)
     React.useEffect(() => {
-        if (!isEditing && clientId && date) {
+        if (!isEditing && clientId && date && !invoiceNumberEdited.current) {
             getNextInvoiceNumberAction(clientId, date).then(setInvoiceNumber)
         }
     }, [clientId, date, isEditing])
@@ -236,7 +238,11 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                                     <Input
                                         id="invoice_number"
                                         value={invoiceNumber}
-                                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                                        onChange={(e) => {
+                                            invoiceNumberEdited.current = true
+                                            setInvoiceNumber(e.target.value)
+                                        }}
+                                        placeholder={clientId ? 'Generating...' : 'Select a client first'}
                                         required
                                     />
                                 </div>

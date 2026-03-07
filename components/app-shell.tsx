@@ -99,17 +99,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen flex-col lg:flex-row bg-white">
-            <aside className="w-full lg:w-64 border-r border-neutral-200 bg-neutral-50/50 lg:min-h-screen">
-                <div className="flex h-14 items-center border-b border-neutral-200 px-6">
+            <aside className="w-full lg:w-64 border-r border-neutral-200 bg-neutral-50/50 lg:sticky lg:top-0 lg:h-screen lg:flex-col lg:flex lg:shrink-0">
+                <div className="flex h-14 items-center border-b border-neutral-200 px-6 shrink-0">
                     <Link href="/app" className="flex items-center font-semibold text-neutral-900">
                         <LayoutDashboard className="mr-2 h-5 w-5" />
                         <span>Facturo</span>
                     </Link>
                 </div>
-                <div className="p-4">
+                <div className="flex-1 overflow-y-auto p-4">
                     <SidebarNav items={navItems} />
                 </div>
-                <div className="absolute bottom-4 left-4 right-4 lg:block hidden">
+                <div className="hidden lg:block border-t border-neutral-200 p-4">
                     <button
                         onClick={handleSignOut}
                         className="flex w-full items-center px-3 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 rounded-md transition-colors"
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </button>
                 </div>
             </aside>
-            <main className="flex-1 lg:p-8 p-4 overflow-y-auto">
+            <main className="flex-1 lg:p-8 p-4 min-w-0">
                 <Suspense fallback={null}>
                     <SuccessBanner />
                 </Suspense>
