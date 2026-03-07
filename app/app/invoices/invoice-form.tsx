@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Client, Invoice, InvoiceLineItem, Settings, Template } from '@/types'
+import { Client, Invoice, InvoiceLineItem, Settings } from '@/types'
 import { createInvoiceAction, updateInvoiceAction } from '@/lib/actions'
 import { getNextInvoiceNumberAction, getExchangeRateAction } from './actions'
 import { Button } from '@/components/ui/button'
@@ -13,31 +13,18 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CURRENCIES, formatCurrency } from '@/lib/currency'
 import { calculateTotals } from '@/lib/tax'
-import { Trash2, Plus, ArrowLeft, Download } from 'lucide-react'
+import { Trash2, Plus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { PdfPreview } from '@/components/pdf/pdf-preview'
 import { PDFDownloadButton } from '@/components/pdf-download-button'
 
-// Helper to avoid hydration issues with PDFDownloadLink
-import dynamic from 'next/dynamic'
-import { InvoicePDF } from '@/components/pdf/invoice-pdf'
-
-const PDFDownloadLinkWrapper = dynamic(
-    () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-    {
-        ssr: false,
-        loading: () => <Button variant="outline" disabled>Loading PDF...</Button>,
-    }
-)
-
 interface InvoiceFormProps {
     invoice?: Invoice
     clients: Client[]
-    templates: Template[]
     settings: Settings | null
 }
 
-export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFormProps) {
+export function InvoiceForm({ invoice, clients, settings }: InvoiceFormProps) {
     const isEditing = !!invoice
 
     // Derive default due date from settings payment terms
@@ -82,13 +69,13 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
     const [secondaryCurrency, setSecondaryCurrency] = React.useState(invoice?.secondary_currency || '')
     const [showSecondaryCurrency, setShowSecondaryCurrency] = React.useState(invoice?.show_secondary_currency || false)
     const [exchangeRate, setExchangeRate] = React.useState(invoice?.exchange_rate_used || 1)
-    const [templateId, setTemplateId] = React.useState(invoice?.template_id || (templates.length > 0 ? templates[0].id : ''))
     const [showIva, setShowIva] = React.useState(invoice?.show_iva ?? true)
     const [showPaymentDetails, setShowPaymentDetails] = React.useState(invoice?.show_payment_details || false)
     const [paymentDetails, setPaymentDetails] = React.useState(invoice?.payment_details || settingsPaymentDetails)
     const [showNotes, setShowNotes] = React.useState(invoice?.show_notes || false)
     const [notes, setNotes] = React.useState(invoice?.notes || '')
     const [submittedToAccountant, setSubmittedToAccountant] = React.useState(invoice?.submitted_to_accountant || false)
+    const [lineItemsError, setLineItemsError] = React.useState('')
 
     const client = clients.find(c => c.id === clientId)
     const [isDirty, setIsDirty] = React.useState(false)
@@ -106,7 +93,9 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
     // Auto-generate invoice number when client or date changes (new invoices only, unless user has edited it)
     React.useEffect(() => {
         if (!isEditing && clientId && date && !invoiceNumberEdited.current) {
-            getNextInvoiceNumberAction(clientId, date).then(setInvoiceNumber)
+            getNextInvoiceNumberAction(clientId, date)
+                .then(setInvoiceNumber)
+                .catch(() => { /* silently ignore — user can type manually */ })
         }
     }, [clientId, date, isEditing])
 
@@ -142,7 +131,7 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
         id: invoice?.id || 'preview',
         user_id: invoice?.user_id || 'preview',
         client_id: clientId,
-        template_id: templateId,
+        template_id: null,
         invoice_number: invoiceNumber,
         date: date,
         due_date: dueDate,
@@ -161,16 +150,21 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
         submitted_to_accountant: submittedToAccountant,
         created_at: invoice?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        client: client, // Include client for preview
-        template: templates.find(t => t.id === templateId)
+        client: client,
     }
 
     // Submit
     async function action(formData: FormData) {
+        const serviceItems = lineItems.filter(item => !item.is_expense)
+        if (serviceItems.length === 0) {
+            setLineItemsError('Add at least one line item before saving.')
+            return
+        }
+        setLineItemsError('')
         setIsDirty(false)
         const rawData = {
             client_id: clientId,
-            template_id: templateId || null,
+            template_id: null,
             invoice_number: invoiceNumber,
             date: date,
             due_date: dueDate,
@@ -231,6 +225,11 @@ export function InvoiceForm({ invoice, clients, templates, settings }: InvoiceFo
                     </div>
                 </div>
 
+                {lineItemsError && (
+                    <div className="rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+                        {lineItemsError}
+                    </div>
+                )}
                 <form id="invoice-form" action={action} className="space-y-6" onChange={() => setIsDirty(true)}>
                     <Card>
                         <CardContent className="p-6 space-y-6">

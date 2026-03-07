@@ -13,7 +13,7 @@ export function calculateMonthlyRevenue(
             const invoiceDate = new Date(invoice.date)
             return invoiceDate.getMonth() === month &&
                 invoiceDate.getFullYear() === year &&
-                (invoice.status === 'paid' || invoice.status === 'sent')
+                invoice.status === 'paid'
         })
         .reduce((total, invoice) => total + invoice.totals.total, 0)
 }
@@ -34,9 +34,7 @@ export function getInvoicesByStatus(
 export function getOverdueInvoices(invoices: Invoice[]): Invoice[] {
     const now = new Date()
     return invoices.filter(invoice => {
-        if (invoice.status === 'paid' || invoice.status === 'cancelled') {
-            return false
-        }
+        if (invoice.status !== 'sent') return false
         const dueDate = new Date(invoice.due_date)
         return dueDate < now
     })

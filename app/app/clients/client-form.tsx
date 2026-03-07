@@ -42,8 +42,9 @@ export function ClientForm({ client }: { client?: Client }) {
                             <Input id="name" name="name" defaultValue={client?.name} required />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="client_code">Client Code (e.g. CLIUK01)</Label>
-                            <Input id="client_code" name="client_code" defaultValue={client?.client_code} required />
+                            <Label htmlFor="client_code">Client Code</Label>
+                            <Input id="client_code" name="client_code" placeholder="e.g. ACME" defaultValue={client?.client_code} required />
+                            <p className="text-xs text-neutral-400">Used to number invoices — e.g. ACME-2026-001</p>
                         </div>
                     </div>
 

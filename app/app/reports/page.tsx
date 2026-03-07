@@ -243,7 +243,7 @@ export default async function ReportsPage({
                             </tr>
                         </thead>
                         <tbody>
-                            {quarters.map((q, i) => (
+                            {yearQuarters.map((q, i) => (
                                 <tr key={q.label} className={`border-b border-neutral-100 ${i % 2 === 0 ? '' : 'bg-neutral-50/50'}`}>
                                     <td className="px-4 py-3 font-medium text-neutral-900">{q.label}</td>
                                     <td className="px-4 py-3 text-right font-mono">{formatCurrency(q.revenue, 'EUR')}</td>

@@ -21,20 +21,6 @@ export interface Client {
   updated_at: string
 }
 
-export interface Template {
-  id: string
-  user_id: string
-  name: string
-  layout: 'minimal' | 'detailed'
-  fields: {
-    showIVA: boolean
-    showIRPF: boolean
-    showFooterNotes: boolean
-    showSecondaryCurrency: boolean
-  }
-  created_at: string
-  updated_at: string
-}
 
 export interface InvoiceLineItem {
   description: string
@@ -55,7 +41,7 @@ export interface Invoice {
   id: string
   user_id: string
   client_id: string
-  template_id: string | null
+  template_id?: string | null
   invoice_number: string
   date: string
   due_date: string
@@ -81,7 +67,6 @@ export interface Invoice {
 
   // Joined fields
   client?: Client
-  template?: Template
 }
 
 export interface Settings {

@@ -2,13 +2,16 @@ import Link from 'next/link'
 import { getInvoices, getSettings } from '@/lib/data'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus } from 'lucide-react'
+import { Plus, Copy } from 'lucide-react'
 import { formatCurrency } from '@/lib/currency'
 import { getStatusColor } from '@/lib/dashboard-helpers'
 import { PDFDownloadButton } from '@/components/pdf-download-button'
 import { DeleteButton } from '@/components/delete-button'
-import { updateInvoiceStatusAction, deleteInvoiceAction, toggleAccountantSubmittedAction } from '@/lib/actions'
+import { FormSubmitButton } from '@/components/form-submit-button'
+import { updateInvoiceStatusAction, deleteInvoiceAction, toggleAccountantSubmittedAction, duplicateInvoiceAction } from '@/lib/actions'
+import { InvoiceSearch } from './invoice-search'
 import { cn } from '@/lib/utils'
+import { Suspense } from 'react'
 
 const STATUS_TABS = [
     { label: 'All', value: '' },
@@ -21,9 +24,9 @@ const STATUS_TABS = [
 export default async function InvoicesPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string }>
+    searchParams: Promise<{ status?: string; q?: string }>
 }) {
-    const { status: statusFilter } = await searchParams
+    const { status: statusFilter, q } = await searchParams
     const [invoices, settings] = await Promise.all([getInvoices(), getSettings()])
     const now = new Date()
 
@@ -32,13 +35,21 @@ export default async function InvoicesPage({
         _isOverdue: inv.status === 'sent' && new Date(inv.due_date) < now,
     }))
 
-    const filtered = statusFilter === 'overdue'
+    // Status filter
+    const byStatus = statusFilter === 'overdue'
         ? withOverdue.filter(inv => inv._isOverdue)
         : statusFilter
             ? withOverdue.filter(inv => inv.status === statusFilter && !inv._isOverdue)
             : withOverdue
 
-    // Tab counts
+    // Text search across invoice number and client name
+    const filtered = q
+        ? byStatus.filter(inv =>
+            inv.invoice_number.toLowerCase().includes(q.toLowerCase()) ||
+            (inv.client?.name ?? '').toLowerCase().includes(q.toLowerCase())
+        )
+        : byStatus
+
     const counts = {
         '': invoices.length,
         draft: invoices.filter(i => i.status === 'draft').length,
@@ -62,48 +73,53 @@ export default async function InvoicesPage({
                 </Link>
             </div>
 
-            {/* Status filter tabs */}
-            <div className="flex gap-1 border-b border-neutral-200">
-                {STATUS_TABS.map(tab => {
-                    const active = (statusFilter ?? '') === tab.value
-                    const count = counts[tab.value]
-                    return (
-                        <Link
-                            key={tab.value}
-                            href={tab.value ? `/app/invoices?status=${tab.value}` : '/app/invoices'}
-                            className={cn(
-                                'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-                                active
-                                    ? 'border-neutral-900 text-neutral-900'
-                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                            )}
-                        >
-                            {tab.label}
-                            {count > 0 && (
-                                <span className={cn(
-                                    'ml-1.5 rounded-full px-1.5 py-0.5 text-xs',
-                                    active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600',
-                                    tab.value === 'overdue' && !active && count > 0 && 'bg-red-100 text-red-700'
-                                )}>
-                                    {count}
-                                </span>
-                            )}
-                        </Link>
-                    )
-                })}
+            {/* Status filter tabs + search */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex gap-1 border-b border-neutral-200 flex-1">
+                    {STATUS_TABS.map(tab => {
+                        const active = (statusFilter ?? '') === tab.value
+                        const count = counts[tab.value]
+                        return (
+                            <Link
+                                key={tab.value}
+                                href={tab.value ? `/app/invoices?status=${tab.value}` : '/app/invoices'}
+                                className={cn(
+                                    'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
+                                    active
+                                        ? 'border-neutral-900 text-neutral-900'
+                                        : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                )}
+                            >
+                                {tab.label}
+                                {count > 0 && (
+                                    <span className={cn(
+                                        'ml-1.5 rounded-full px-1.5 py-0.5 text-xs',
+                                        active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600',
+                                        tab.value === 'overdue' && !active && count > 0 && 'bg-red-100 text-red-700'
+                                    )}>
+                                        {count}
+                                    </span>
+                                )}
+                            </Link>
+                        )
+                    })}
+                </div>
+                <Suspense>
+                    <InvoiceSearch defaultValue={q} />
+                </Suspense>
             </div>
 
-            <div className="rounded-md border border-neutral-200 bg-white">
+            <div className="rounded-md border border-neutral-200 bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Number</TableHead>
                             <TableHead>Client</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Due</TableHead>
+                            <TableHead className="hidden sm:table-cell">Date</TableHead>
+                            <TableHead className="hidden md:table-cell">Due</TableHead>
                             <TableHead className="text-right">Total</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-center">Acct.</TableHead>
+                            <TableHead className="text-center hidden lg:table-cell">Acct.</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -111,7 +127,7 @@ export default async function InvoicesPage({
                         {filtered.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center h-24 text-neutral-500">
-                                    {statusFilter ? `No ${statusFilter} invoices.` : 'No invoices yet. Create one to get started.'}
+                                    {q ? `No invoices matching "${q}".` : statusFilter ? `No ${statusFilter} invoices.` : 'No invoices yet. Create one to get started.'}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -125,13 +141,15 @@ export default async function InvoicesPage({
                                                 {invoice.invoice_number}
                                             </Link>
                                         </TableCell>
-                                        <TableCell>{invoice.client?.name}</TableCell>
-                                        <TableCell className="text-neutral-500">{new Date(invoice.date).toLocaleDateString()}</TableCell>
+                                        <TableCell className="max-w-[120px] truncate">{invoice.client?.name}</TableCell>
+                                        <TableCell className="text-neutral-500 hidden sm:table-cell">
+                                            {new Date(invoice.date).toLocaleDateString('es-ES')}
+                                        </TableCell>
                                         <TableCell className={cn(
-                                            'text-neutral-500',
+                                            'hidden md:table-cell text-neutral-500',
                                             invoice._isOverdue && 'text-red-600 font-medium'
                                         )}>
-                                            {new Date(invoice.due_date).toLocaleDateString()}
+                                            {new Date(invoice.due_date).toLocaleDateString('es-ES')}
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-medium">
                                             {formatCurrency(invoice.totals.total, 'EUR')}
@@ -141,7 +159,7 @@ export default async function InvoicesPage({
                                                 {statusColors.label}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-center">
+                                        <TableCell className="text-center hidden lg:table-cell">
                                             <form action={toggleAccountantSubmittedAction.bind(null, invoice.id, !invoice.submitted_to_accountant)}>
                                                 <button
                                                     type="submit"
@@ -158,16 +176,16 @@ export default async function InvoicesPage({
                                             <div className="flex items-center justify-end gap-1">
                                                 {invoice.status === 'draft' && (
                                                     <form action={updateInvoiceStatusAction.bind(null, invoice.id, 'sent')}>
-                                                        <Button type="submit" variant="ghost" size="sm" className="h-7 text-xs px-2 text-blue-700 hover:text-blue-800 hover:bg-blue-50" title="Mark as sent">
+                                                        <FormSubmitButton className="h-7 text-xs px-2 text-blue-700 hover:text-blue-800 hover:bg-blue-50" pendingText="…">
                                                             Mark Sent
-                                                        </Button>
+                                                        </FormSubmitButton>
                                                     </form>
                                                 )}
                                                 {(invoice.status === 'sent' || invoice._isOverdue) && (
                                                     <form action={updateInvoiceStatusAction.bind(null, invoice.id, 'paid')}>
-                                                        <Button type="submit" variant="ghost" size="sm" className="h-7 text-xs px-2 text-green-700 hover:text-green-800 hover:bg-green-50" title="Mark as paid">
+                                                        <FormSubmitButton className="h-7 text-xs px-2 text-green-700 hover:text-green-800 hover:bg-green-50" pendingText="…">
                                                             Mark Paid
-                                                        </Button>
+                                                        </FormSubmitButton>
                                                     </form>
                                                 )}
                                                 {invoice.status !== 'paid' && (
@@ -187,9 +205,14 @@ export default async function InvoicesPage({
                                                         showText={false}
                                                     />
                                                 )}
+                                                <form action={duplicateInvoiceAction.bind(null, invoice.id)}>
+                                                    <FormSubmitButton className="h-7 text-xs px-2 text-neutral-500 hover:text-neutral-700" pendingText="…" title="Duplicate invoice">
+                                                        <Copy className="h-3.5 w-3.5" />
+                                                    </FormSubmitButton>
+                                                </form>
                                                 <DeleteButton
                                                     deleteAction={deleteInvoiceAction.bind(null, invoice.id)}
-                                                    label="×"
+                                                    label="Delete"
                                                 />
                                             </div>
                                         </TableCell>

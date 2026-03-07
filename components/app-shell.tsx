@@ -9,7 +9,6 @@ import {
     Users,
     Settings,
     LogOut,
-    File,
     BarChart3
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -79,11 +78,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             title: 'Clients',
             href: '/app/clients',
             icon: <Users className="h-4 w-4" />,
-        },
-        {
-            title: 'Templates',
-            href: '/app/templates',
-            icon: <File className="h-4 w-4" />,
         },
         {
             title: 'Reports',

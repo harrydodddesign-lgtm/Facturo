@@ -218,54 +218,11 @@ export default async function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="opacity-60">
                     <CardHeader>
                         <CardTitle>Notifications</CardTitle>
-                        <CardDescription>Manage email notifications and alerts.</CardDescription>
+                        <CardDescription>Email notifications — coming soon.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <form className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="notify_invoice_paid">Invoice Paid</Label>
-                                    <p className="text-sm text-neutral-500">Receive email when an invoice is marked as paid</p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    id="notify_invoice_paid"
-                                    name="notify_invoice_paid"
-                                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
-                                    defaultChecked={true}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="notify_invoice_overdue">Invoice Overdue</Label>
-                                    <p className="text-sm text-neutral-500">Get reminders when invoices become overdue</p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    id="notify_invoice_overdue"
-                                    name="notify_invoice_overdue"
-                                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
-                                    defaultChecked={true}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="notify_new_client">New Client Added</Label>
-                                    <p className="text-sm text-neutral-500">Notification when a new client is created</p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    id="notify_new_client"
-                                    name="notify_new_client"
-                                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
-                                />
-                            </div>
-                            <Button type="submit">Save Notification Preferences</Button>
-                        </form>
-                    </CardContent>
                 </Card>
             </div>
         </div>

@@ -8,8 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
-export default async function SendInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SendInvoicePage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ error?: string }>
+}) {
     const { id } = await params
+    const { error: errorParam } = await searchParams
     const [invoice, settings] = await Promise.all([getInvoice(id), getSettings()])
 
     if (!invoice) redirect('/app/invoices')
@@ -48,21 +55,34 @@ export default async function SendInvoicePage({ params }: { params: Promise<{ id
                             const subject = formData.get('subject') as string
                             const message = formData.get('message') as string
 
-                            if (!invoice.client) throw new Error('Invoice has no client')
+                            if (!invoice.client) {
+                                redirect(`/app/invoices/${id}/send?error=no-client`)
+                            }
 
-                            await sendInvoiceEmail({
-                                invoice,
-                                client: invoice.client,
-                                settings,
-                                to,
-                                subject,
-                                message,
-                            })
+                            try {
+                                await sendInvoiceEmail({
+                                    invoice,
+                                    client: invoice.client,
+                                    settings,
+                                    to,
+                                    subject,
+                                    message,
+                                })
+                            } catch (err) {
+                                const msg = err instanceof Error ? encodeURIComponent(err.message) : 'unknown'
+                                redirect(`/app/invoices/${id}/send?error=${msg}`)
+                            }
 
                             redirect(`/app/invoices/${id}?success=1`)
                         }}
                         className="space-y-4"
                     >
+                        {errorParam && (
+                            <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                                <strong>Failed to send:</strong> {decodeURIComponent(errorParam)}
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label htmlFor="to">To</Label>
                             <Input
@@ -96,7 +116,7 @@ export default async function SendInvoicePage({ params }: { params: Promise<{ id
 
                         {!process.env.RESEND_API_KEY && (
                             <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                                <strong>Note:</strong> Add <code>RESEND_API_KEY</code> to your <code>.env.local</code> to enable email sending.
+                                <strong>Note:</strong> Add <code>RESEND_API_KEY</code> to your environment variables to enable email sending.
                             </div>
                         )}
 

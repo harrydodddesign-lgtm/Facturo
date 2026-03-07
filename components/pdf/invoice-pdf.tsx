@@ -147,9 +147,9 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                     </View>
                     <View style={[styles.col, { alignItems: 'flex-end' }]}>
                         <Text style={styles.label}>DATE</Text>
-                        <Text style={styles.value}>{new Date(invoice.date).toLocaleDateString()}</Text>
+                        <Text style={styles.value}>{new Date(invoice.date).toLocaleDateString('es-ES')}</Text>
                         <Text style={styles.label}>DUE DATE</Text>
-                        <Text style={styles.value}>{new Date(invoice.due_date).toLocaleDateString()}</Text>
+                        <Text style={styles.value}>{new Date(invoice.due_date).toLocaleDateString('es-ES')}</Text>
                     </View>
                 </View>
 

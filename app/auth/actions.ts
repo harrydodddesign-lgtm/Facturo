@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 
 export type AuthState = {
     error?: string
@@ -17,19 +16,12 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
-    const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-        return { error: error.message, success: false }
-    }
+    if (error) return { error: error.message, success: false }
 
     revalidatePath('/', 'layout')
     redirect('/app')
-    // Redirect throws, so we don't reach here usually, but for TS:
-    return { success: true }
 }
 
 export async function signup(prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -46,9 +38,7 @@ export async function signup(prevState: AuthState, formData: FormData): Promise<
         },
     })
 
-    if (error) {
-        return { error: error.message, success: false }
-    }
+    if (error) return { error: error.message, success: false }
 
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
@@ -59,14 +49,14 @@ export async function signup(prevState: AuthState, formData: FormData): Promise<
     return { success: true, message: 'Check your email to confirm your account.' }
 }
 
-export async function loginAsGuest() {
-    const cookieStore = await cookies()
-    cookieStore.set('demo_mode', 'true', {
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 // 1 day
+export async function resetPassword(prevState: AuthState, formData: FormData): Promise<AuthState> {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/reset-password`,
     })
 
-    redirect('/app/invoices')
+    if (error) return { error: error.message }
+    return { message: 'Check your email for a password reset link.' }
 }
