@@ -206,7 +206,7 @@ export default async function InvoicesPage({
                                                     />
                                                 )}
                                                 <form action={duplicateInvoiceAction.bind(null, invoice.id)}>
-                                                    <FormSubmitButton className="h-7 text-xs px-2 text-neutral-500 hover:text-neutral-700" pendingText="…" title="Duplicate invoice">
+                                                    <FormSubmitButton className="h-7 text-xs px-2 text-neutral-500 hover:text-neutral-700" pendingText="…">
                                                         <Copy className="h-3.5 w-3.5" />
                                                     </FormSubmitButton>
                                                 </form>
