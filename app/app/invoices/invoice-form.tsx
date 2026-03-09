@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Component, ReactNode } from 'react'
 import { Client, Invoice, InvoiceLineItem, Settings } from '@/types'
 import { createInvoiceAction, updateInvoiceAction } from '@/lib/actions'
 import { getNextInvoiceNumberAction, getExchangeRateAction } from './actions'
@@ -22,6 +23,23 @@ interface InvoiceFormProps {
     invoice?: Invoice
     clients: Client[]
     settings: Settings | null
+}
+
+class DownloadButtonBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: ReactNode }) {
+        super(props)
+        this.state = { hasError: false }
+    }
+    static getDerivedStateFromError() { return { hasError: true } }
+    componentDidUpdate(prevProps: { children: ReactNode }) {
+        if (prevProps.children !== this.props.children && this.state.hasError) {
+            this.setState({ hasError: false })
+        }
+    }
+    render() {
+        if (this.state.hasError) return null
+        return this.props.children
+    }
 }
 
 export function InvoiceForm({ invoice, clients, settings }: InvoiceFormProps) {
@@ -211,13 +229,15 @@ export function InvoiceForm({ invoice, clients, settings }: InvoiceFormProps) {
                             </Link>
                         )}
                         {client && (
-                            <PDFDownloadButton
-                                invoice={currentInvoice}
-                                client={client}
-                                settings={settings}
-                                variant="outline"
-                                size="sm"
-                            />
+                            <DownloadButtonBoundary>
+                                <PDFDownloadButton
+                                    invoice={currentInvoice}
+                                    client={client}
+                                    settings={settings}
+                                    variant="outline"
+                                    size="sm"
+                                />
+                            </DownloadButtonBoundary>
                         )}
                         <Button type="submit" form="invoice-form" size="sm">
                             {isEditing ? 'Save' : 'Create'}
