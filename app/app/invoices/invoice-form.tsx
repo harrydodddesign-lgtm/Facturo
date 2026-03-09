@@ -123,7 +123,7 @@ export function InvoiceForm({ invoice, clients, settings }: InvoiceFormProps) {
     }
 
     // Calculations
-    const totals = calculateTotals(lineItems, ivaRate, showIrpf ? irpfRate : 0)
+    const totals = calculateTotals(lineItems, showIva ? ivaRate : 0, showIrpf ? irpfRate : 0)
     const secondaryTotal = totals.total * exchangeRate
 
     // Construct current invoice object for preview

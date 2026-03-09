@@ -228,12 +228,12 @@ export const InvoicePDF = ({ invoice, client, settings }: InvoicePDFProps) => {
                         <Text>Subtotal</Text>
                         <Text>{safeCurrency(invoice.totals.subtotal)}</Text>
                     </View>
-                    {invoice.show_iva && (
+                    {invoice.show_iva ? (
                         <View style={styles.totalRow}>
                             <Text>IVA ({Math.round(ivaRate)}%)</Text>
                             <Text>{safeCurrency(invoice.totals.iva)}</Text>
                         </View>
-                    )}
+                    ) : null}
                     {invoice.totals.irpf > 0 && (
                         <View style={styles.totalRow}>
                             <Text>IRPF ({Math.round(irpfRate)}%)</Text>
