@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { loginSchema, signupSchema, resetPasswordSchema, formatZodError } from '@/lib/schemas'
 
 export type AuthState = {
     error?: string
@@ -11,13 +12,14 @@ export type AuthState = {
 }
 
 export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {
+    const result = loginSchema.safeParse({
+        email: formData.get('email'),
+        password: formData.get('password'),
+    })
+    if (!result.success) return { error: formatZodError(result.error), success: false }
+
     const supabase = await createClient()
-
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-
+    const { error } = await supabase.auth.signInWithPassword(result.data)
     if (error) return { error: error.message, success: false }
 
     revalidatePath('/', 'layout')
@@ -25,19 +27,20 @@ export async function login(prevState: AuthState, formData: FormData): Promise<A
 }
 
 export async function signup(prevState: AuthState, formData: FormData): Promise<AuthState> {
+    const result = signupSchema.safeParse({
+        email: formData.get('email'),
+        password: formData.get('password'),
+    })
+    if (!result.success) return { error: formatZodError(result.error), success: false }
+
     const supabase = await createClient()
-
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
     const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: result.data.email,
+        password: result.data.password,
         options: {
             emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
         },
     })
-
     if (error) return { error: error.message, success: false }
 
     const { data: { session } } = await supabase.auth.getSession()
@@ -50,10 +53,13 @@ export async function signup(prevState: AuthState, formData: FormData): Promise<
 }
 
 export async function resetPassword(prevState: AuthState, formData: FormData): Promise<AuthState> {
-    const supabase = await createClient()
-    const email = formData.get('email') as string
+    const result = resetPasswordSchema.safeParse({
+        email: formData.get('email'),
+    })
+    if (!result.success) return { error: formatZodError(result.error) }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(result.data.email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/reset-password`,
     })
 

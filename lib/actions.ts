@@ -3,23 +3,36 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import {
+    clientSchema,
+    invoiceSchema,
+    invoiceStatusSchema,
+    settingsSchema,
+    formatZodError,
+} from '@/lib/schemas'
 
-// CLIENTS
+// ─── Clients ──────────────────────────────────────────────────────────────────
 
-export async function createClientAction(data: any) {
+export async function createClientAction(data: unknown) {
+    const result = clientSchema.safeParse(data)
+    if (!result.success) throw new Error(formatZodError(result.error))
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { error } = await supabase.from('clients').insert({ ...data, user_id: user.id })
+    const { error } = await supabase.from('clients').insert({ ...result.data, user_id: user.id })
     if (error) throw error
     revalidatePath('/app/clients')
     redirect('/app/clients?success=1')
 }
 
-export async function updateClientAction(id: string, data: any) {
+export async function updateClientAction(id: string, data: unknown) {
+    const result = clientSchema.safeParse(data)
+    if (!result.success) throw new Error(formatZodError(result.error))
+
     const supabase = await createClient()
-    const { error } = await supabase.from('clients').update(data).eq('id', id)
+    const { error } = await supabase.from('clients').update(result.data).eq('id', id)
     if (error) throw error
     revalidatePath('/app/clients')
     revalidatePath(`/app/clients/${id}`)
@@ -34,9 +47,12 @@ export async function deleteClientAction(id: string) {
     redirect('/app/clients?success=1')
 }
 
-// SETTINGS
+// ─── Settings ─────────────────────────────────────────────────────────────────
 
-export async function updateSettingsAction(data: any) {
+export async function updateSettingsAction(data: unknown) {
+    const result = settingsSchema.safeParse(data)
+    if (!result.success) throw new Error(formatZodError(result.error))
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
@@ -44,36 +60,41 @@ export async function updateSettingsAction(data: any) {
     const { data: existing } = await supabase.from('settings').select('id').eq('user_id', user.id).single()
 
     if (existing) {
-        const { error } = await supabase.from('settings').update(data).eq('user_id', user.id)
+        const { error } = await supabase.from('settings').update(result.data).eq('user_id', user.id)
         if (error) throw error
     } else {
-        const { error } = await supabase.from('settings').insert({ ...data, user_id: user.id })
+        const { error } = await supabase.from('settings').insert({ ...result.data, user_id: user.id })
         if (error) throw error
     }
 
     revalidatePath('/app/settings')
 }
 
-// INVOICES
+// ─── Invoices ─────────────────────────────────────────────────────────────────
 
-export async function createInvoiceAction(data: any) {
+export async function createInvoiceAction(data: unknown) {
+    const result = invoiceSchema.safeParse(data)
+    if (!result.success) throw new Error(formatZodError(result.error))
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
     const { error } = await supabase.from('invoices').insert({
-        ...data,
+        ...result.data,
         user_id: user.id,
-        status: data.status || 'draft',
     })
     if (error) throw error
     revalidatePath('/app/invoices')
     redirect('/app/invoices?success=1')
 }
 
-export async function updateInvoiceAction(id: string, data: any) {
+export async function updateInvoiceAction(id: string, data: unknown) {
+    const result = invoiceSchema.safeParse(data)
+    if (!result.success) throw new Error(formatZodError(result.error))
+
     const supabase = await createClient()
-    const { error } = await supabase.from('invoices').update(data).eq('id', id)
+    const { error } = await supabase.from('invoices').update(result.data).eq('id', id)
     if (error) throw error
     revalidatePath('/app/invoices')
     revalidatePath(`/app/invoices/${id}`)
@@ -81,11 +102,14 @@ export async function updateInvoiceAction(id: string, data: any) {
 }
 
 export async function updateInvoiceStatusAction(id: string, status: string) {
+    const result = invoiceStatusSchema.safeParse(status)
+    if (!result.success) throw new Error(`Invalid status: ${status}`)
+
     const supabase = await createClient()
     const now = new Date().toISOString()
-    const update: Record<string, any> = { status }
-    if (status === 'sent') update.sent_at = now
-    if (status === 'paid') update.paid_at = now
+    const update: Record<string, unknown> = { status: result.data }
+    if (result.data === 'sent') update.sent_at = now
+    if (result.data === 'paid') update.paid_at = now
 
     const { error } = await supabase.from('invoices').update(update).eq('id', id)
     if (error) throw error
