@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Client } from '@/types'
 import { createClientAction, updateClientAction } from '@/lib/actions'
 import { Button } from '@/components/ui/button'
@@ -10,10 +11,22 @@ import { Select } from '@/components/ui/select'
 import { CURRENCIES } from '@/lib/currency'
 import { Card, CardContent } from '@/components/ui/card'
 
+function isRedirectError(err: unknown): boolean {
+    return (
+        typeof err === 'object' &&
+        err !== null &&
+        'digest' in err &&
+        typeof (err as Record<string, unknown>).digest === 'string' &&
+        (err as Record<string, string>).digest.startsWith('NEXT_REDIRECT')
+    )
+}
+
 export function ClientForm({ client }: { client?: Client }) {
     const isEditing = !!client
+    const [error, setError] = useState<string | null>(null)
 
     async function action(formData: FormData) {
+        setError(null)
         const rawData = {
             name: formData.get('name') as string,
             client_code: formData.get('client_code') as string,
@@ -25,10 +38,15 @@ export function ClientForm({ client }: { client?: Client }) {
             email: formData.get('email') as string || null,
         }
 
-        if (isEditing && client) {
-            await updateClientAction(client.id, rawData)
-        } else {
-            await createClientAction(rawData)
+        try {
+            if (isEditing && client) {
+                await updateClientAction(client.id, rawData)
+            } else {
+                await createClientAction(rawData)
+            }
+        } catch (err) {
+            if (isRedirectError(err)) throw err
+            setError(err instanceof Error ? err.message : 'An unexpected error occurred')
         }
     }
 
@@ -95,6 +113,10 @@ export function ClientForm({ client }: { client?: Client }) {
                         <Label htmlFor="notes">Notes</Label>
                         <Textarea id="notes" name="notes" defaultValue={client?.notes || ''} />
                     </div>
+
+                    {error && (
+                        <p className="text-sm text-red-500 font-medium">{error}</p>
+                    )}
 
                     <div className="flex justify-end pt-4">
                         <Button type="submit">{isEditing ? 'Save Changes' : 'Create Client'}</Button>

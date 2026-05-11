@@ -46,12 +46,14 @@ export const clientSchema = z.object({
 })
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
+// All fields are optional because the settings page saves each section
+// independently (partial updates). Fields that are present are still validated.
 
 export const settingsSchema = z.object({
-    invoice_prefix: z.string().min(1, 'Invoice prefix is required').max(20),
-    default_iva: z.number().min(0, 'IVA cannot be negative').max(100, 'IVA cannot exceed 100%'),
-    default_irpf: z.number().min(0, 'IRPF cannot be negative').max(100, 'IRPF cannot exceed 100%'),
-    accountant_mode: z.boolean().default(false),
+    invoice_prefix: z.string().min(1, 'Invoice prefix is required').max(20).optional(),
+    default_iva: z.number().min(0, 'IVA cannot be negative').max(100, 'IVA cannot exceed 100%').optional(),
+    default_irpf: z.number().min(0, 'IRPF cannot be negative').max(100, 'IRPF cannot exceed 100%').optional(),
+    accountant_mode: z.boolean().optional(),
     company_name: z.string().max(200).nullable().optional(),
     company_address: z.string().max(500).nullable().optional(),
     tax_id: z.string().max(30).nullable().optional(),
